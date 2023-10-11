@@ -114,7 +114,7 @@ string GetPage(string url)
 
     // Le righe seguenti leggono la risposta in modo sincrono.
     using Stream stream = response.Content.ReadAsStream();
-    using StreamReader reader = new(stream);
+    using StreamReader reader = new(stream, leaveOpen: true);
     string content = reader.ReadToEnd();
 
     return content;
@@ -138,7 +138,7 @@ async Task<string> GetPageAsync(string url, CancellationToken cancellationToken 
     // Le righe seguenti leggono la risposta in modo asincrono.
     // await prima dello using vuol dire che il Dispose viene chiamato in modo asincrono. 
     await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-    using StreamReader reader = new(stream);
+    using StreamReader reader = new(stream, leaveOpen: true);
     string content = await reader.ReadToEndAsync(cancellationToken);
 
     return content;
@@ -165,6 +165,9 @@ async Task<string> GetPagesParallelAsync(CancellationToken cancellationToken = d
     Task<string> homeTask = GetPageAsync("https://example.com", cancellationToken);
     Task<string> testTask = GetPageAsync("https://example.com/test", cancellationToken);
 
+    // Attende che entrambe le chiamate abbiano ricevuto una risposta.
+    await Task.WhenAll(homeTask, testTask);
+
     // Legge la risposta ad entrambe le chiamate.
     string home = await homeTask;
     string test = await testTask;
@@ -174,7 +177,7 @@ async Task<string> GetPagesParallelAsync(CancellationToken cancellationToken = d
 
 
 
-// Supponendo di avere un metodo legacy scrito con codice sincrono che non può
+// Supponendo di avere un metodo legacy scritto con codice sincrono che non può
 // essere convertito in codice asincrono...
 string SomeLegacyMethod()
 {
@@ -199,7 +202,9 @@ async Task<string> SomeLegacyMethodAsync(CancellationToken cancellationToken = d
     // sincrono, il massimo che può fare è non lanciare l'operazione se rileva
     // che la richiesta è già stata cancellata quando questo codice parte.
 
-    return await Task.Run(SomeLegacyMethod, cancellationToken);
+    Task<string> task = Task.Run(SomeLegacyMethod, cancellationToken);
+
+    return await task;
 }
 
 
@@ -208,10 +213,10 @@ async Task<string> SomeLegacyMethodAsync(CancellationToken cancellationToken = d
 string GetPagesSequential()
 {
     // Avvia la chiamata al metodo asincrono.
-    Task<string> result = GetPagesParallelAsync();
+    Task<string> task = GetPagesParallelAsync();
 
-    // Attende sincronamente risposta (blocca il thread chiamante).
-    return result.GetAwaiter().GetResult();
+    // Attende in modo sincrono risposta (blocca il thread chiamante).
+    return task.GetAwaiter().GetResult();
 }
 
 
