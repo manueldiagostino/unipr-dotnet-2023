@@ -83,7 +83,7 @@ IEnumerable<int> test2 = test.Select(n =>
 
 Console.WriteLine("-- 2 --");
 
-int[] test3 = test2.Take(2).ToArray();
+int[] test3 = test2.Take(4).ToArray();
 
 Console.WriteLine("-- 3 --");
 

@@ -136,6 +136,7 @@ async Task<string> GetPageAsync(string url, CancellationToken cancellationToken 
     HttpResponseMessage response = await client.SendAsync(new(HttpMethod.Get, url), cancellationToken);
 
     // Le righe seguenti leggono la risposta in modo asincrono.
+    // await prima dello using vuol dire che il Dispose viene chiamato in modo asincrono. 
     await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
     using StreamReader reader = new(stream);
     string content = await reader.ReadToEndAsync(cancellationToken);
